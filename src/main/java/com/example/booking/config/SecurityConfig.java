@@ -18,11 +18,8 @@ public class SecurityConfig {
         http
             .csrf(AbstractHttpConfigurer::disable) // Disabled for simplicity in demo
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/h2-console/**").permitAll()
                 .anyRequest().authenticated()
             )
-            // Allow frames for H2 console
-            .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
             .httpBasic(Customizer.withDefaults())
             .formLogin(Customizer.withDefaults()); // Basic auth and form login enabled
 
