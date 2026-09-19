@@ -18,7 +18,7 @@ public class SecurityConfig {
         http
             .csrf(AbstractHttpConfigurer::disable) // Disabled for simplicity in demo
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/").permitAll() // Allow everyone to see the welcome page
+                .requestMatchers("/", "/api/browse/**").permitAll() // Allow everyone to browse movies
                 .anyRequest().authenticated()
             )
             .httpBasic(Customizer.withDefaults())

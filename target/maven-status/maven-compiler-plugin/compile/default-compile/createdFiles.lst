@@ -1,6 +1,7 @@
 com\example\booking\entity\Seat.class
 com\example\booking\config\SecurityConfig.class
 com\example\booking\service\CustomUserDetailsService.class
+com\example\booking\controller\HomeController.class
 com\example\booking\entity\Booking.class
 com\example\booking\entity\User$UserBuilder.class
 com\example\booking\entity\Booking$BookingBuilder.class
