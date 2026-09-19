@@ -11,6 +11,8 @@ A robust, enterprise-grade REST API built with **Spring Boot** that demonstrates
 Because this is now connected to a live cloud PostgreSQL database:
 * Any time a user makes a booking, the transaction is **permanently saved** in the Neon database.
 * The application authenticates users directly against the `users` table in the database.
+* **Database Connection String:** 
+  `jdbc:postgresql://ep-super-credit-b518729e-pooler.c-7.us-east-2.aws.neon.tech/neondb?user=neondb_owner&password=[HIDDEN_FOR_SECURITY]&sslmode=require`
 
 ## 🛠️ Tech Stack
 * **Java 17** & **Spring Boot 3**
