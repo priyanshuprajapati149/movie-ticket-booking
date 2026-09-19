@@ -6,22 +6,19 @@ A robust, enterprise-grade REST API built with **Spring Boot** that demonstrates
 
 * **Live Application (Render):** `https://your-app-name.onrender.com` *(Replace this link once Render deployment finishes)*
 * **Database (Neon Cloud):** Serverless PostgreSQL hosted on [Neon.tech](https://neon.tech)
-* **Distributed Lock:** Powered by Redis (Redisson)
 
 ## 🛠️ Tech Stack
 * **Java 17** & **Spring Boot 3**
 * **Spring Data JPA / Hibernate**
 * **Spring Security** (Basic Auth & DB-backed custom users)
 * **PostgreSQL** (Neon Cloud)
-* **Redis** (Redisson Distributed Locking)
 * **Docker** (For Render deployment)
 
 ## 🧠 The Race Condition Solution
 If User A and User B both attempt to book the exact same seat at the exact same millisecond, a standard `if(seat == AVAILABLE)` check will fail, leading to a double-booked seat. 
 
 **How this project solves it:**
-1. **Redis Distributed Lock:** Before hitting the database, the system attempts to acquire a Redis lock on the specific `seatId`.
-2. **Pessimistic Database Lock:** As a fallback, the repository uses `@Lock(LockModeType.PESSIMISTIC_WRITE)` (`SELECT ... FOR UPDATE`), physically locking the row in PostgreSQL so the second thread is forced to wait until the first completes.
+* **Pessimistic Database Lock:** The repository uses `@Lock(LockModeType.PESSIMISTIC_WRITE)` (`SELECT ... FOR UPDATE`), physically locking the row in PostgreSQL so the second thread is forced to wait until the first completes.
 
 ## 🏃‍♂️ How to Run Locally
 
