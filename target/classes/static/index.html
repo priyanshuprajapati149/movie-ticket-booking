@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Ticket Booking System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .movie-card:hover {
+            transform: scale(1.02);
+            transition: transform 0.2s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-sm py-4 px-8 flex justify-between items-center border-b">
+        <div class="flex items-center space-x-8">
+            <h1 class="text-2xl font-bold text-red-500 tracking-tight">Movie<span class="text-gray-800">Booking</span></h1>
+            <div class="relative hidden md:block">
+                <input type="text" placeholder="Search for Movies, Events, Plays..." class="w-96 pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-red-500 text-sm">
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-8 py-8">
+        
+        <!-- Live Race Condition Demo -->
+        <div class="bg-red-50 border border-red-200 rounded-lg p-6 mb-10 shadow-sm">
+            <h2 class="text-xl font-bold text-red-600 mb-2">⚡ Live Race Condition Demo (Seat ID: 1)</h2>
+            <p class="text-sm text-gray-700 mb-4">Clicking the button below will fire two identical booking requests to the backend at the exact same millisecond—one from User Alice and one from User Bob.</p>
+            
+            <button onclick="testRaceCondition()" class="bg-red-500 text-white px-6 py-2 rounded font-bold hover:bg-red-600 shadow-md active:bg-red-700 transition">
+                Simulate Concurrent Booking
+            </button>
+
+            <div class="grid grid-cols-2 gap-4 mt-6">
+                <div class="bg-white p-4 rounded border shadow-sm">
+                    <h3 class="font-bold text-gray-800 border-b pb-2 mb-2">User Alice (Thread A)</h3>
+                    <p id="alice-log" class="text-sm font-mono text-gray-600">Waiting...</p>
+                </div>
+                <div class="bg-white p-4 rounded border shadow-sm">
+                    <h3 class="font-bold text-gray-800 border-b pb-2 mb-2">User Bob (Thread B)</h3>
+                    <p id="bob-log" class="text-sm font-mono text-gray-600">Waiting...</p>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Recommended Movies</h2>
+        
+        <!-- Movie Grid -->
+        <div id="movie-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            <div class="animate-pulse flex space-x-4">
+              <div class="rounded-lg bg-gray-300 h-64 w-full"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Alice & Bob Base64 encoded credentials (username:password)
+        const aliceAuth = 'Basic ' + btoa('alice:password');
+        const bobAuth = 'Basic ' + btoa('bob:password');
+
+        function testRaceCondition() {
+            document.getElementById('alice-log').innerHTML = '<span class="text-yellow-500">Sending request...</span>';
+            document.getElementById('bob-log').innerHTML = '<span class="text-yellow-500">Sending request...</span>';
+
+            // Fire both fetch requests at the EXACT same time
+            const aliceRequest = fetch('/api/bookings/seat/1', {
+                method: 'POST',
+                headers: { 'Authorization': aliceAuth }
+            });
+
+            const bobRequest = fetch('/api/bookings/seat/1', {
+                method: 'POST',
+                headers: { 'Authorization': bobAuth }
+            });
+
+            // Handle Alice's response
+            aliceRequest.then(async res => {
+                const text = await res.text();
+                if (res.ok) {
+                    document.getElementById('alice-log').innerHTML = `<span class="text-green-600 font-bold">✅ SUCCESS:</span> ${text}`;
+                } else {
+                    document.getElementById('alice-log').innerHTML = `<span class="text-red-600 font-bold">❌ FAILED:</span> ${text}`;
+                }
+            });
+
+            // Handle Bob's response
+            bobRequest.then(async res => {
+                const text = await res.text();
+                if (res.ok) {
+                    document.getElementById('bob-log').innerHTML = `<span class="text-green-600 font-bold">✅ SUCCESS:</span> ${text}`;
+                } else {
+                    document.getElementById('bob-log').innerHTML = `<span class="text-red-600 font-bold">❌ FAILED:</span> ${text}`;
+                }
+            });
+        }
+
+        // Fetch movies from our Spring Boot API
+        fetch('/api/browse/movies')
+            .then(response => response.json())
+            .then(movies => {
+                const grid = document.getElementById('movie-grid');
+                grid.innerHTML = ''; // Clear loading skeleton
+
+                movies.forEach(movie => {
+                    // Generate a generic image placeholder since we don't have posters in the DB
+                    const posterUrl = `https://placehold.co/400x600/333/FFF?text=${encodeURIComponent(movie.title)}`;
+                    
+                    const card = `
+                        <div class="movie-card cursor-pointer group">
+                            <div class="relative overflow-hidden rounded-lg mb-3">
+                                <img src="${posterUrl}" alt="${movie.title}" class="w-full h-auto object-cover rounded-lg">
+                                <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs px-2 py-1 flex items-center justify-between">
+                                    <span>⭐ 8.5/10</span>
+                                    <span>50K Votes</span>
+                                </div>
+                            </div>
+                            <h3 class="font-semibold text-gray-800 text-lg truncate">${movie.title}</h3>
+                            <p class="text-gray-500 text-sm">${movie.genre} • ${movie.language}</p>
+                        </div>
+                    `;
+                    grid.innerHTML += card;
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching movies:', error);
+                document.getElementById('movie-grid').innerHTML = '<p class="text-red-500 col-span-full">Failed to load movies. Ensure the backend is running!</p>';
+            });
+    </script>
+</body>
+</html>

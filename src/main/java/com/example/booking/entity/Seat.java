@@ -17,6 +17,7 @@ public class Seat {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "show_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Show show;
 
     @Column(name = "seat_number", nullable = false)
