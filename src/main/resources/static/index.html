@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BookMyShow Clone</title>
+    <title>Movie Ticket Booking System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .movie-card:hover {
@@ -17,43 +17,88 @@
     <!-- Navbar -->
     <nav class="bg-white shadow-sm py-4 px-8 flex justify-between items-center border-b">
         <div class="flex items-center space-x-8">
-            <h1 class="text-2xl font-bold text-red-500 tracking-tight">book<span class="text-gray-800">my</span>show</h1>
+            <h1 class="text-2xl font-bold text-red-500 tracking-tight">Movie<span class="text-gray-800">Booking</span></h1>
             <div class="relative hidden md:block">
                 <input type="text" placeholder="Search for Movies, Events, Plays..." class="w-96 pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-red-500 text-sm">
-                <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </div>
         </div>
-        <div class="flex items-center space-x-4">
-            <span class="text-sm text-gray-600 hidden md:block">Location</span>
-            <button class="bg-red-500 text-white px-4 py-1.5 rounded text-sm font-medium hover:bg-red-600">Sign in</button>
-        </div>
     </nav>
-
-    <!-- Sub Navigation -->
-    <div class="bg-gray-100 py-2 px-8 text-sm text-gray-600 flex space-x-6 border-b">
-        <a href="#" class="hover:text-red-500">Movies</a>
-        <a href="#" class="hover:text-red-500">Stream</a>
-        <a href="#" class="hover:text-red-500">Events</a>
-        <a href="#" class="hover:text-red-500">Plays</a>
-        <a href="#" class="hover:text-red-500">Sports</a>
-    </div>
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-8 py-8">
         
+        <!-- Live Race Condition Demo -->
+        <div class="bg-red-50 border border-red-200 rounded-lg p-6 mb-10 shadow-sm">
+            <h2 class="text-xl font-bold text-red-600 mb-2">⚡ Live Race Condition Demo (Seat ID: 1)</h2>
+            <p class="text-sm text-gray-700 mb-4">Clicking the button below will fire two identical booking requests to the backend at the exact same millisecond—one from User Alice and one from User Bob.</p>
+            
+            <button onclick="testRaceCondition()" class="bg-red-500 text-white px-6 py-2 rounded font-bold hover:bg-red-600 shadow-md active:bg-red-700 transition">
+                Simulate Concurrent Booking
+            </button>
+
+            <div class="grid grid-cols-2 gap-4 mt-6">
+                <div class="bg-white p-4 rounded border shadow-sm">
+                    <h3 class="font-bold text-gray-800 border-b pb-2 mb-2">User Alice (Thread A)</h3>
+                    <p id="alice-log" class="text-sm font-mono text-gray-600">Waiting...</p>
+                </div>
+                <div class="bg-white p-4 rounded border shadow-sm">
+                    <h3 class="font-bold text-gray-800 border-b pb-2 mb-2">User Bob (Thread B)</h3>
+                    <p id="bob-log" class="text-sm font-mono text-gray-600">Waiting...</p>
+                </div>
+            </div>
+        </div>
+
         <h2 class="text-2xl font-bold text-gray-800 mb-6">Recommended Movies</h2>
         
         <!-- Movie Grid -->
         <div id="movie-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-            <!-- Movies will be dynamically injected here by JavaScript -->
             <div class="animate-pulse flex space-x-4">
               <div class="rounded-lg bg-gray-300 h-64 w-full"></div>
             </div>
         </div>
-
     </main>
 
     <script>
+        // Alice & Bob Base64 encoded credentials (username:password)
+        const aliceAuth = 'Basic ' + btoa('alice:password');
+        const bobAuth = 'Basic ' + btoa('bob:password');
+
+        function testRaceCondition() {
+            document.getElementById('alice-log').innerHTML = '<span class="text-yellow-500">Sending request...</span>';
+            document.getElementById('bob-log').innerHTML = '<span class="text-yellow-500">Sending request...</span>';
+
+            // Fire both fetch requests at the EXACT same time
+            const aliceRequest = fetch('/api/bookings/seat/1', {
+                method: 'POST',
+                headers: { 'Authorization': aliceAuth }
+            });
+
+            const bobRequest = fetch('/api/bookings/seat/1', {
+                method: 'POST',
+                headers: { 'Authorization': bobAuth }
+            });
+
+            // Handle Alice's response
+            aliceRequest.then(async res => {
+                const text = await res.text();
+                if (res.ok) {
+                    document.getElementById('alice-log').innerHTML = `<span class="text-green-600 font-bold">✅ SUCCESS:</span> ${text}`;
+                } else {
+                    document.getElementById('alice-log').innerHTML = `<span class="text-red-600 font-bold">❌ FAILED:</span> ${text}`;
+                }
+            });
+
+            // Handle Bob's response
+            bobRequest.then(async res => {
+                const text = await res.text();
+                if (res.ok) {
+                    document.getElementById('bob-log').innerHTML = `<span class="text-green-600 font-bold">✅ SUCCESS:</span> ${text}`;
+                } else {
+                    document.getElementById('bob-log').innerHTML = `<span class="text-red-600 font-bold">❌ FAILED:</span> ${text}`;
+                }
+            });
+        }
+
         // Fetch movies from our Spring Boot API
         fetch('/api/browse/movies')
             .then(response => response.json())
