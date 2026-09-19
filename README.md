@@ -4,7 +4,7 @@ A robust, enterprise-grade REST API built with **Spring Boot** that demonstrates
 
 ## 🚀 Live Demo & Links
 
-* **Live Application:** `https://your-app-name.onrender.com` *(I need your Render URL to update this!)*
+* **Live Application:** [https://movie-ticket-booking-e5uz.onrender.com](https://movie-ticket-booking-e5uz.onrender.com/)
 * **Database Management:** [Neon.tech Dashboard](https://neon.tech)
 
 ## 💾 How Data is Saved
