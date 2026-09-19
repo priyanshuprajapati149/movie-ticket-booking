@@ -4,8 +4,13 @@ A robust, enterprise-grade REST API built with **Spring Boot** that demonstrates
 
 ## 🚀 Live Demo & Links
 
-* **Live Application (Render):** `https://your-app-name.onrender.com` *(Replace this link once Render deployment finishes)*
-* **Database (Neon Cloud):** Serverless PostgreSQL hosted on [Neon.tech](https://neon.tech)
+* **Live Application:** `https://your-app-name.onrender.com` *(I need your Render URL to update this!)*
+* **Database Management:** [Neon.tech Dashboard](https://neon.tech)
+
+## 💾 How Data is Saved
+Because this is now connected to a live cloud PostgreSQL database:
+* Any time a user makes a booking, the transaction is **permanently saved** in the Neon database.
+* The application authenticates users directly against the `users` table in the database.
 
 ## 🛠️ Tech Stack
 * **Java 17** & **Spring Boot 3**
