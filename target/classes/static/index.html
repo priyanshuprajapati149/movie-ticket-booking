@@ -3,133 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Movie Ticket Booking System</title>
+    <title>MovieBooking</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .movie-card:hover {
-            transform: scale(1.02);
-            transition: transform 0.2s ease-in-out;
-        }
+        .movie-card:hover { transform: scale(1.02); transition: transform 0.2s; }
+        .seat { width: 40px; height: 40px; border-radius: 8px 8px 0 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+        .seat-available { background-color: #fff; border: 2px solid #22c55e; color: #22c55e; }
+        .seat-available:hover { background-color: #22c55e; color: #fff; }
+        .seat-booked { background-color: #d1d5db; border: 2px solid #9ca3af; color: #6b7280; cursor: not-allowed; }
     </style>
 </head>
-<body class="bg-gray-50 font-sans">
+<body class="bg-gray-50 font-sans min-h-screen">
 
     <!-- Navbar -->
     <nav class="bg-white shadow-sm py-4 px-8 flex justify-between items-center border-b">
-        <div class="flex items-center space-x-8">
-            <h1 class="text-2xl font-bold text-red-500 tracking-tight">Movie<span class="text-gray-800">Booking</span></h1>
-            <div class="relative hidden md:block">
-                <input type="text" placeholder="Search for Movies, Events, Plays..." class="w-96 pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-red-500 text-sm">
-            </div>
-        </div>
+        <h1 class="text-2xl font-bold text-red-500 cursor-pointer" onclick="loadMovies()">Movie<span class="text-gray-800">Booking</span></h1>
+        <div class="text-sm text-gray-500">Live Race Condition Demo</div>
     </nav>
 
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-8 py-8">
-        
-        <!-- Live Race Condition Demo -->
-        <div class="bg-red-50 border border-red-200 rounded-lg p-6 mb-10 shadow-sm">
-            <h2 class="text-xl font-bold text-red-600 mb-2">⚡ Live Race Condition Demo (Seat ID: 1)</h2>
-            <p class="text-sm text-gray-700 mb-4">Clicking the button below will fire two identical booking requests to the backend at the exact same millisecond—one from User Alice and one from User Bob.</p>
+    <!-- Main Content Container -->
+    <main id="app-container" class="max-w-6xl mx-auto px-8 py-8"></main>
+
+    <!-- Race Condition Modal -->
+    <div id="race-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">Book Seat: <span id="modal-seat-num" class="text-red-500"></span></h2>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-800">✖</button>
+            </div>
             
-            <button onclick="testRaceCondition()" class="bg-red-500 text-white px-6 py-2 rounded font-bold hover:bg-red-600 shadow-md active:bg-red-700 transition">
-                Simulate Concurrent Booking
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <h3 class="font-bold text-red-600 mb-1">⚡ Race Condition Test</h3>
+                <p class="text-sm text-gray-700">Clicking the button will simulate Alice and Bob trying to book this exact seat at the exact same millisecond.</p>
+                <button onclick="fireRaceCondition()" class="mt-4 w-full bg-red-500 text-white py-2 rounded-lg font-bold hover:bg-red-600 active:bg-red-700 transition">
+                    Simulate Concurrent Booking
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-gray-50 p-3 rounded border">
+                    <h4 class="font-bold text-xs text-gray-500 uppercase tracking-wider mb-2">Thread A (Alice)</h4>
+                    <div id="alice-log" class="text-sm font-mono break-words">Waiting...</div>
+                </div>
+                <div class="bg-gray-50 p-3 rounded border">
+                    <h4 class="font-bold text-xs text-gray-500 uppercase tracking-wider mb-2">Thread B (Bob)</h4>
+                    <div id="bob-log" class="text-sm font-mono break-words">Waiting...</div>
+                </div>
+            </div>
+            
+            <button onclick="closeModalAndRefresh()" class="mt-6 w-full bg-gray-200 text-gray-800 py-2 rounded-lg font-bold hover:bg-gray-300 transition">
+                Close & Refresh Seat Map
             </button>
-
-            <div class="grid grid-cols-2 gap-4 mt-6">
-                <div class="bg-white p-4 rounded border shadow-sm">
-                    <h3 class="font-bold text-gray-800 border-b pb-2 mb-2">User Alice (Thread A)</h3>
-                    <p id="alice-log" class="text-sm font-mono text-gray-600">Waiting...</p>
-                </div>
-                <div class="bg-white p-4 rounded border shadow-sm">
-                    <h3 class="font-bold text-gray-800 border-b pb-2 mb-2">User Bob (Thread B)</h3>
-                    <p id="bob-log" class="text-sm font-mono text-gray-600">Waiting...</p>
-                </div>
-            </div>
         </div>
-
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">Recommended Movies</h2>
-        
-        <!-- Movie Grid -->
-        <div id="movie-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-            <div class="animate-pulse flex space-x-4">
-              <div class="rounded-lg bg-gray-300 h-64 w-full"></div>
-            </div>
-        </div>
-    </main>
+    </div>
 
     <script>
-        // Alice & Bob Base64 encoded credentials (username:password)
+        const app = document.getElementById('app-container');
+        let currentShowId = null;
+        let selectedSeatId = null;
+
+        // Base64 Credentials
         const aliceAuth = 'Basic ' + btoa('alice:password');
         const bobAuth = 'Basic ' + btoa('bob:password');
 
-        function testRaceCondition() {
-            document.getElementById('alice-log').innerHTML = '<span class="text-yellow-500">Sending request...</span>';
-            document.getElementById('bob-log').innerHTML = '<span class="text-yellow-500">Sending request...</span>';
+        // 1. Load Movies (Home Screen)
+        function loadMovies() {
+            app.innerHTML = '<div class="text-center py-10">Loading Movies...</div>';
+            fetch('/api/browse/movies')
+                .then(res => res.json())
+                .then(movies => {
+                    let html = '<h2 class="text-2xl font-bold text-gray-800 mb-6">Recommended Movies</h2><div class="grid grid-cols-2 md:grid-cols-4 gap-6">';
+                    movies.forEach(m => {
+                        const poster = `https://placehold.co/400x600/333/FFF?text=${encodeURIComponent(m.title)}`;
+                        html += `
+                            <div class="movie-card cursor-pointer bg-white rounded-lg shadow-sm overflow-hidden" onclick="loadShows(${m.id}, '${m.title}')">
+                                <img src="${poster}" class="w-full h-auto object-cover">
+                                <div class="p-4">
+                                    <h3 class="font-bold text-lg truncate">${m.title}</h3>
+                                    <p class="text-gray-500 text-sm">${m.genre} • ${m.language}</p>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    app.innerHTML = html;
+                });
+        }
 
-            // Fire both fetch requests at the EXACT same time
-            const aliceRequest = fetch('/api/bookings/seat/1', {
-                method: 'POST',
-                headers: { 'Authorization': aliceAuth }
-            });
+        // 2. Load Shows for a Movie
+        function loadShows(movieId, title) {
+            app.innerHTML = '<div class="text-center py-10">Loading Shows...</div>';
+            fetch(`/api/browse/movies/${movieId}/shows`)
+                .then(res => res.json())
+                .then(shows => {
+                    let html = `<div class="mb-6"><button onclick="loadMovies()" class="text-blue-500 text-sm hover:underline">← Back to Movies</button></div>`;
+                    html += `<h2 class="text-3xl font-bold text-gray-800 mb-6">${title} <span class="text-xl font-normal text-gray-500">- Select a Show</span></h2>`;
+                    
+                    if(shows.length === 0) {
+                        app.innerHTML = html + '<p>No shows available.</p>';
+                        return;
+                    }
 
-            const bobRequest = fetch('/api/bookings/seat/1', {
-                method: 'POST',
-                headers: { 'Authorization': bobAuth }
-            });
+                    html += '<div class="space-y-4">';
+                    shows.forEach(s => {
+                        const time = new Date(s.startTime).toLocaleString();
+                        html += `
+                            <div class="bg-white p-4 rounded-lg shadow-sm border flex justify-between items-center">
+                                <div>
+                                    <h3 class="font-bold text-lg">${s.cinema.name}</h3>
+                                    <p class="text-gray-500 text-sm">${s.cinema.location}</p>
+                                </div>
+                                <button onclick="loadSeats(${s.id}, '${s.cinema.name}', '${time}')" class="bg-green-500 text-white px-6 py-2 rounded font-bold hover:bg-green-600">
+                                    ${time}
+                                </button>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    app.innerHTML = html;
+                });
+        }
 
-            // Handle Alice's response
-            aliceRequest.then(async res => {
+        // 3. Load Seat Map
+        function loadSeats(showId, cinemaName, time) {
+            currentShowId = showId;
+            app.innerHTML = '<div class="text-center py-10">Loading Seat Map...</div>';
+            fetch(`/api/browse/shows/${showId}/seats`)
+                .then(res => res.json())
+                .then(seats => {
+                    let html = `<div class="mb-6"><button onclick="loadMovies()" class="text-blue-500 text-sm hover:underline">← Back to Home</button></div>`;
+                    html += `<h2 class="text-2xl font-bold text-gray-800 mb-2">${cinemaName}</h2>`;
+                    html += `<p class="text-gray-500 mb-8">${time}</p>`;
+
+                    html += `<div class="bg-white p-8 rounded-xl shadow-sm border max-w-2xl mx-auto text-center">`;
+                    html += `<div class="w-full bg-gray-200 h-2 mb-10 rounded shadow-inner relative"><span class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 font-bold tracking-widest">SCREEN</span></div>`;
+                    
+                    html += `<div class="flex justify-center gap-4 flex-wrap">`;
+                    seats.forEach(s => {
+                        if (s.status === 'AVAILABLE') {
+                            html += `<div class="seat seat-available" onclick="openModal(${s.id}, '${s.seatNumber}')">${s.seatNumber}</div>`;
+                        } else {
+                            html += `<div class="seat seat-booked" title="Booked">${s.seatNumber}</div>`;
+                        }
+                    });
+                    html += `</div></div>`;
+                    app.innerHTML = html;
+                });
+        }
+
+        // 4. Modal & Race Condition Logic
+        function openModal(seatId, seatNum) {
+            selectedSeatId = seatId;
+            document.getElementById('modal-seat-num').innerText = seatNum;
+            document.getElementById('alice-log').innerHTML = 'Ready';
+            document.getElementById('bob-log').innerHTML = 'Ready';
+            document.getElementById('race-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('race-modal').classList.add('hidden');
+        }
+
+        function closeModalAndRefresh() {
+            closeModal();
+            // Refresh seats to show the newly booked seat turning gray
+            if (currentShowId) {
+                const btn = document.querySelector('button[onclick^="loadSeats"]');
+                loadSeats(currentShowId, "Updating...", "");
+            }
+        }
+
+        function fireRaceCondition() {
+            document.getElementById('alice-log').innerHTML = '<span class="text-yellow-600">Sending...</span>';
+            document.getElementById('bob-log').innerHTML = '<span class="text-yellow-600">Sending...</span>';
+
+            const p1 = fetch(`/api/bookings/seat/${selectedSeatId}`, { method: 'POST', headers: { 'Authorization': aliceAuth }});
+            const p2 = fetch(`/api/bookings/seat/${selectedSeatId}`, { method: 'POST', headers: { 'Authorization': bobAuth }});
+
+            p1.then(async res => {
                 const text = await res.text();
-                if (res.ok) {
-                    document.getElementById('alice-log').innerHTML = `<span class="text-green-600 font-bold">✅ SUCCESS:</span> ${text}`;
-                } else {
-                    document.getElementById('alice-log').innerHTML = `<span class="text-red-600 font-bold">❌ FAILED:</span> ${text}`;
-                }
+                document.getElementById('alice-log').innerHTML = res.ok ? `<span class="text-green-600">✅ Won lock!<br><br>${text}</span>` : `<span class="text-red-600">❌ Failed<br><br>${text}</span>`;
             });
 
-            // Handle Bob's response
-            bobRequest.then(async res => {
+            p2.then(async res => {
                 const text = await res.text();
-                if (res.ok) {
-                    document.getElementById('bob-log').innerHTML = `<span class="text-green-600 font-bold">✅ SUCCESS:</span> ${text}`;
-                } else {
-                    document.getElementById('bob-log').innerHTML = `<span class="text-red-600 font-bold">❌ FAILED:</span> ${text}`;
-                }
+                document.getElementById('bob-log').innerHTML = res.ok ? `<span class="text-green-600">✅ Won lock!<br><br>${text}</span>` : `<span class="text-red-600">❌ Failed<br><br>${text}</span>`;
             });
         }
 
-        // Fetch movies from our Spring Boot API
-        fetch('/api/browse/movies')
-            .then(response => response.json())
-            .then(movies => {
-                const grid = document.getElementById('movie-grid');
-                grid.innerHTML = ''; // Clear loading skeleton
-
-                movies.forEach(movie => {
-                    // Generate a generic image placeholder since we don't have posters in the DB
-                    const posterUrl = `https://placehold.co/400x600/333/FFF?text=${encodeURIComponent(movie.title)}`;
-                    
-                    const card = `
-                        <div class="movie-card cursor-pointer group">
-                            <div class="relative overflow-hidden rounded-lg mb-3">
-                                <img src="${posterUrl}" alt="${movie.title}" class="w-full h-auto object-cover rounded-lg">
-                                <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs px-2 py-1 flex items-center justify-between">
-                                    <span>⭐ 8.5/10</span>
-                                    <span>50K Votes</span>
-                                </div>
-                            </div>
-                            <h3 class="font-semibold text-gray-800 text-lg truncate">${movie.title}</h3>
-                            <p class="text-gray-500 text-sm">${movie.genre} • ${movie.language}</p>
-                        </div>
-                    `;
-                    grid.innerHTML += card;
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching movies:', error);
-                document.getElementById('movie-grid').innerHTML = '<p class="text-red-500 col-span-full">Failed to load movies. Ensure the backend is running!</p>';
-            });
+        // Init
+        loadMovies();
     </script>
 </body>
 </html>
