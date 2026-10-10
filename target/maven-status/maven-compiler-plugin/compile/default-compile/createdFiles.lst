@@ -1,3 +1,4 @@
+com\example\booking\controller\AuthController.class
 com\example\booking\entity\Seat.class
 com\example\booking\config\SecurityConfig.class
 com\example\booking\repository\CinemaRepository.class
@@ -5,10 +6,12 @@ com\example\booking\service\CustomUserDetailsService.class
 com\example\booking\entity\Cinema.class
 com\example\booking\entity\User$UserBuilder.class
 com\example\booking\service\BookingService.class
+com\example\booking\service\JwtService.class
 com\example\booking\entity\Movie$MovieBuilder.class
 com\example\booking\controller\BookingController.class
 com\example\booking\repository\SeatRepository.class
 com\example\booking\BookingApplication.class
+com\example\booking\config\JwtAuthFilter.class
 com\example\booking\entity\Booking.class
 com\example\booking\entity\Cinema$CinemaBuilder.class
 com\example\booking\entity\Booking$BookingBuilder.class

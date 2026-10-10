@@ -18,42 +18,65 @@
     <!-- Navbar -->
     <nav class="bg-white shadow-sm py-4 px-8 flex justify-between items-center border-b">
         <h1 class="text-2xl font-bold text-red-500 cursor-pointer" onclick="loadMovies()">Movie<span class="text-gray-800">Booking</span></h1>
-        <div class="text-sm text-gray-500">Live Race Condition Demo</div>
+        
+        <div id="auth-section" class="flex items-center space-x-4">
+            <button onclick="openAuthModal()" class="bg-red-500 text-white px-4 py-1.5 rounded text-sm font-medium hover:bg-red-600 shadow-sm">Sign in / Register</button>
+        </div>
     </nav>
 
     <!-- Main Content Container -->
     <main id="app-container" class="max-w-6xl mx-auto px-8 py-8"></main>
 
-    <!-- Race Condition Modal -->
-    <div id="race-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 relative">
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800">✖</button>
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Get Started</h2>
+            
+            <input type="text" id="username" placeholder="Username" class="w-full border p-3 rounded mb-3 focus:outline-none focus:border-red-500">
+            <input type="password" id="password" placeholder="Password" class="w-full border p-3 rounded mb-4 focus:outline-none focus:border-red-500">
+            <p id="auth-error" class="text-red-500 text-sm mb-4 hidden"></p>
+
+            <div class="flex space-x-3">
+                <button onclick="handleAuth('login')" class="flex-1 bg-red-500 text-white py-2 rounded font-bold hover:bg-red-600 transition">Login</button>
+                <button onclick="handleAuth('register')" class="flex-1 bg-gray-200 text-gray-800 py-2 rounded font-bold hover:bg-gray-300 transition">Register</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seat Booking Modal -->
+    <div id="seat-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold text-gray-800">Book Seat: <span id="modal-seat-num" class="text-red-500"></span></h2>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-800">✖</button>
+                <button onclick="closeSeatModal()" class="text-gray-400 hover:text-gray-800">✖</button>
             </div>
             
-            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                <h3 class="font-bold text-red-600 mb-1">⚡ Race Condition Test</h3>
-                <p class="text-sm text-gray-700">Clicking the button will simulate Alice and Bob trying to book this exact seat at the exact same millisecond.</p>
-                <button onclick="fireRaceCondition()" class="mt-4 w-full bg-red-500 text-white py-2 rounded-lg font-bold hover:bg-red-600 active:bg-red-700 transition">
-                    Simulate Concurrent Booking
+            <div class="mb-6">
+                <button onclick="bookNormally()" class="w-full bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600 active:bg-green-700 transition shadow-md">
+                    🎟️ Book Now (Using your Account)
                 </button>
+                <p id="normal-book-log" class="text-center mt-2 text-sm font-semibold"></p>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <div class="bg-gray-50 p-3 rounded border">
-                    <h4 class="font-bold text-xs text-gray-500 uppercase tracking-wider mb-2">Thread A (Alice)</h4>
-                    <div id="alice-log" class="text-sm font-mono break-words">Waiting...</div>
-                </div>
-                <div class="bg-gray-50 p-3 rounded border">
-                    <h4 class="font-bold text-xs text-gray-500 uppercase tracking-wider mb-2">Thread B (Bob)</h4>
-                    <div id="bob-log" class="text-sm font-mono break-words">Waiting...</div>
+            <div class="border-t border-gray-200 pt-6">
+                <h3 class="font-bold text-red-600 mb-1">⚡ Developer Race Condition Test</h3>
+                <p class="text-sm text-gray-700 mb-4">Simulates Alice and Bob trying to book this exact seat at the exact same millisecond.</p>
+                <button onclick="fireRaceCondition()" class="w-full bg-red-500 text-white py-2 rounded-lg font-bold hover:bg-red-600 active:bg-red-700 transition">
+                    Simulate Concurrent Booking
+                </button>
+
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div class="bg-gray-50 p-3 rounded border">
+                        <h4 class="font-bold text-xs text-gray-500 uppercase tracking-wider mb-2">Thread A (Alice)</h4>
+                        <div id="alice-log" class="text-sm font-mono break-words">Waiting...</div>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded border">
+                        <h4 class="font-bold text-xs text-gray-500 uppercase tracking-wider mb-2">Thread B (Bob)</h4>
+                        <div id="bob-log" class="text-sm font-mono break-words">Waiting...</div>
+                    </div>
                 </div>
             </div>
-            
-            <button onclick="closeModalAndRefresh()" class="mt-6 w-full bg-gray-200 text-gray-800 py-2 rounded-lg font-bold hover:bg-gray-300 transition">
-                Close & Refresh Seat Map
-            </button>
         </div>
     </div>
 
@@ -61,12 +84,55 @@
         const app = document.getElementById('app-container');
         let currentShowId = null;
         let selectedSeatId = null;
+        let currentUser = localStorage.getItem('username');
+        let currentToken = localStorage.getItem('token');
 
-        // Base64 Credentials
-        const aliceAuth = 'Basic ' + btoa('alice:password');
-        const bobAuth = 'Basic ' + btoa('bob:password');
+        // Check auth status on load
+        updateAuthUI();
 
-        // 1. Load Movies (Home Screen)
+        function updateAuthUI() {
+            const authSection = document.getElementById('auth-section');
+            if (currentToken && currentUser) {
+                authSection.innerHTML = `
+                    <span class="font-semibold text-gray-700 mr-2">Hi, ${currentUser}</span>
+                    <button onclick="logout()" class="text-sm text-gray-500 hover:text-red-500 underline">Logout</button>
+                `;
+            } else {
+                authSection.innerHTML = `<button onclick="openAuthModal()" class="bg-red-500 text-white px-4 py-1.5 rounded text-sm font-medium hover:bg-red-600 shadow-sm">Sign in / Register</button>`;
+            }
+        }
+
+        function openAuthModal() { document.getElementById('auth-modal').classList.remove('hidden'); }
+        function closeAuthModal() { document.getElementById('auth-modal').classList.add('hidden'); }
+        function logout() { localStorage.removeItem('token'); localStorage.removeItem('username'); currentToken = null; currentUser = null; updateAuthUI(); }
+
+        async function handleAuth(action) {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const err = document.getElementById('auth-error');
+            
+            const res = await fetch(`/api/auth/${action}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: user, password: pass })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('username', user);
+                currentToken = data.token;
+                currentUser = user;
+                closeAuthModal();
+                updateAuthUI();
+                err.classList.add('hidden');
+            } else {
+                err.innerText = data.error;
+                err.classList.remove('hidden');
+            }
+        }
+
+        // Load Movies
         function loadMovies() {
             app.innerHTML = '<div class="text-center py-10">Loading Movies...</div>';
             fetch('/api/browse/movies')
@@ -78,53 +144,36 @@
                         html += `
                             <div class="movie-card cursor-pointer bg-white rounded-lg shadow-sm overflow-hidden" onclick="loadShows(${m.id}, '${m.title}')">
                                 <img src="${poster}" class="w-full h-auto object-cover">
-                                <div class="p-4">
-                                    <h3 class="font-bold text-lg truncate">${m.title}</h3>
-                                    <p class="text-gray-500 text-sm">${m.genre} • ${m.language}</p>
-                                </div>
-                            </div>
-                        `;
+                                <div class="p-4"><h3 class="font-bold text-lg truncate">${m.title}</h3><p class="text-gray-500 text-sm">${m.genre} • ${m.language}</p></div>
+                            </div>`;
                     });
                     html += '</div>';
                     app.innerHTML = html;
                 });
         }
 
-        // 2. Load Shows for a Movie
+        // Load Shows
         function loadShows(movieId, title) {
             app.innerHTML = '<div class="text-center py-10">Loading Shows...</div>';
             fetch(`/api/browse/movies/${movieId}/shows`)
                 .then(res => res.json())
                 .then(shows => {
                     let html = `<div class="mb-6"><button onclick="loadMovies()" class="text-blue-500 text-sm hover:underline">← Back to Movies</button></div>`;
-                    html += `<h2 class="text-3xl font-bold text-gray-800 mb-6">${title} <span class="text-xl font-normal text-gray-500">- Select a Show</span></h2>`;
-                    
-                    if(shows.length === 0) {
-                        app.innerHTML = html + '<p>No shows available.</p>';
-                        return;
-                    }
-
-                    html += '<div class="space-y-4">';
+                    html += `<h2 class="text-3xl font-bold text-gray-800 mb-6">${title} <span class="text-xl font-normal text-gray-500">- Select a Show</span></h2><div class="space-y-4">`;
                     shows.forEach(s => {
                         const time = new Date(s.startTime).toLocaleString();
                         html += `
                             <div class="bg-white p-4 rounded-lg shadow-sm border flex justify-between items-center">
-                                <div>
-                                    <h3 class="font-bold text-lg">${s.cinema.name}</h3>
-                                    <p class="text-gray-500 text-sm">${s.cinema.location}</p>
-                                </div>
-                                <button onclick="loadSeats(${s.id}, '${s.cinema.name}', '${time}')" class="bg-green-500 text-white px-6 py-2 rounded font-bold hover:bg-green-600">
-                                    ${time}
-                                </button>
-                            </div>
-                        `;
+                                <div><h3 class="font-bold text-lg">${s.cinema.name}</h3><p class="text-gray-500 text-sm">${s.cinema.location}</p></div>
+                                <button onclick="loadSeats(${s.id}, '${s.cinema.name}', '${time}')" class="bg-green-500 text-white px-6 py-2 rounded font-bold hover:bg-green-600">${time}</button>
+                            </div>`;
                     });
                     html += '</div>';
                     app.innerHTML = html;
                 });
         }
 
-        // 3. Load Seat Map
+        // Load Seats
         function loadSeats(showId, cinemaName, time) {
             currentShowId = showId;
             app.innerHTML = '<div class="text-center py-10">Loading Seat Map...</div>';
@@ -132,16 +181,12 @@
                 .then(res => res.json())
                 .then(seats => {
                     let html = `<div class="mb-6"><button onclick="loadMovies()" class="text-blue-500 text-sm hover:underline">← Back to Home</button></div>`;
-                    html += `<h2 class="text-2xl font-bold text-gray-800 mb-2">${cinemaName}</h2>`;
-                    html += `<p class="text-gray-500 mb-8">${time}</p>`;
-
+                    html += `<h2 class="text-2xl font-bold text-gray-800 mb-2">${cinemaName}</h2><p class="text-gray-500 mb-8">${time}</p>`;
                     html += `<div class="bg-white p-8 rounded-xl shadow-sm border max-w-2xl mx-auto text-center">`;
-                    html += `<div class="w-full bg-gray-200 h-2 mb-10 rounded shadow-inner relative"><span class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 font-bold tracking-widest">SCREEN</span></div>`;
-                    
-                    html += `<div class="flex justify-center gap-4 flex-wrap">`;
+                    html += `<div class="w-full bg-gray-200 h-2 mb-10 rounded shadow-inner relative"><span class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 font-bold tracking-widest">SCREEN</span></div><div class="flex justify-center gap-4 flex-wrap">`;
                     seats.forEach(s => {
                         if (s.status === 'AVAILABLE') {
-                            html += `<div class="seat seat-available" onclick="openModal(${s.id}, '${s.seatNumber}')">${s.seatNumber}</div>`;
+                            html += `<div class="seat seat-available" onclick="openSeatModal(${s.id}, '${s.seatNumber}')">${s.seatNumber}</div>`;
                         } else {
                             html += `<div class="seat seat-booked" title="Booked">${s.seatNumber}</div>`;
                         }
@@ -151,47 +196,55 @@
                 });
         }
 
-        // 4. Modal & Race Condition Logic
-        function openModal(seatId, seatNum) {
+        function openSeatModal(seatId, seatNum) {
             selectedSeatId = seatId;
             document.getElementById('modal-seat-num').innerText = seatNum;
-            document.getElementById('alice-log').innerHTML = 'Ready';
-            document.getElementById('bob-log').innerHTML = 'Ready';
-            document.getElementById('race-modal').classList.remove('hidden');
+            document.getElementById('normal-book-log').innerText = '';
+            document.getElementById('alice-log').innerHTML = 'Waiting...';
+            document.getElementById('bob-log').innerHTML = 'Waiting...';
+            document.getElementById('seat-modal').classList.remove('hidden');
         }
 
-        function closeModal() {
-            document.getElementById('race-modal').classList.add('hidden');
+        function closeSeatModal() {
+            document.getElementById('seat-modal').classList.add('hidden');
+            if (currentShowId) loadSeats(currentShowId, "Updating...", "");
         }
 
-        function closeModalAndRefresh() {
-            closeModal();
-            // Refresh seats to show the newly booked seat turning gray
-            if (currentShowId) {
-                const btn = document.querySelector('button[onclick^="loadSeats"]');
-                loadSeats(currentShowId, "Updating...", "");
-            }
-        }
-
-        function fireRaceCondition() {
-            document.getElementById('alice-log').innerHTML = '<span class="text-yellow-600">Sending...</span>';
-            document.getElementById('bob-log').innerHTML = '<span class="text-yellow-600">Sending...</span>';
-
-            const p1 = fetch(`/api/bookings/seat/${selectedSeatId}`, { method: 'POST', headers: { 'Authorization': aliceAuth }});
-            const p2 = fetch(`/api/bookings/seat/${selectedSeatId}`, { method: 'POST', headers: { 'Authorization': bobAuth }});
-
-            p1.then(async res => {
-                const text = await res.text();
-                document.getElementById('alice-log').innerHTML = res.ok ? `<span class="text-green-600">✅ Won lock!<br><br>${text}</span>` : `<span class="text-red-600">❌ Failed<br><br>${text}</span>`;
+        // Normal Booking via JWT
+        async function bookNormally() {
+            if (!currentToken) return openAuthModal();
+            document.getElementById('normal-book-log').innerHTML = '<span class="text-yellow-600">Booking...</span>';
+            const res = await fetch(`/api/bookings/seat/${selectedSeatId}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${currentToken}` }
             });
-
-            p2.then(async res => {
-                const text = await res.text();
-                document.getElementById('bob-log').innerHTML = res.ok ? `<span class="text-green-600">✅ Won lock!<br><br>${text}</span>` : `<span class="text-red-600">❌ Failed<br><br>${text}</span>`;
-            });
+            const text = await res.text();
+            document.getElementById('normal-book-log').innerHTML = res.ok ? `<span class="text-green-600">✅ ${text}</span>` : `<span class="text-red-600">❌ ${text}</span>`;
         }
 
-        // Init
+        // Race Condition Test
+        async function fireRaceCondition() {
+            document.getElementById('alice-log').innerHTML = '<span class="text-yellow-600">Getting Token...</span>';
+            document.getElementById('bob-log').innerHTML = '<span class="text-yellow-600">Getting Token...</span>';
+
+            // Get fresh JWT tokens for test users (assuming they exist from data.sql)
+            const getAlice = fetch('/api/auth/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username:'alice', password:'password'}) });
+            const getBob = fetch('/api/auth/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username:'bob', password:'password'}) });
+            
+            const [aliceRes, bobRes] = await Promise.all([getAlice, getBob]);
+            const aliceData = await aliceRes.json();
+            const bobData = await bobRes.json();
+
+            document.getElementById('alice-log').innerHTML = '<span class="text-yellow-600">Sending Booking...</span>';
+            document.getElementById('bob-log').innerHTML = '<span class="text-yellow-600">Sending Booking...</span>';
+
+            const p1 = fetch(`/api/bookings/seat/${selectedSeatId}`, { method: 'POST', headers: { 'Authorization': `Bearer ${aliceData.token}` }});
+            const p2 = fetch(`/api/bookings/seat/${selectedSeatId}`, { method: 'POST', headers: { 'Authorization': `Bearer ${bobData.token}` }});
+
+            p1.then(async res => { const t = await res.text(); document.getElementById('alice-log').innerHTML = res.ok ? `<span class="text-green-600">✅ Won lock!<br><br>${t}</span>` : `<span class="text-red-600">❌ Failed<br><br>${t}</span>`; });
+            p2.then(async res => { const t = await res.text(); document.getElementById('bob-log').innerHTML = res.ok ? `<span class="text-green-600">✅ Won lock!<br><br>${t}</span>` : `<span class="text-red-600">❌ Failed<br><br>${t}</span>`; });
+        }
+
         loadMovies();
     </script>
 </body>

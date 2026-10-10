@@ -6,13 +6,16 @@ C:\Users\Priyanshu\Downloads\movie-ticket-booking\src\main\java\com\example\book
 C:\Users\Priyanshu\Downloads\movie-ticket-booking\src\main\java\com\example\booking\repository\UserRepository.java
 C:\Users\Priyanshu\Downloads\movie-ticket-booking\src\main\java\com\example\booking\config\SecurityConfig.java
 C:\Users\Priyanshu\Downloads\movie-ticket-booking\src\main\java\com\example\booking\repository\ShowRepository.java
+C:\Users\Priyanshu\Downloads\movie-ticket-booking\src\main\java\com\example\booking\config\JwtAuthFilter.java
 C:\Users\Priyanshu\Downloads\movie-ticket-booking\src\main\java\com\example\booking\entity\Cinema.java
 C:\Users\Priyanshu\Downloads\movie-ticket-booking\src\main\java\com\example\booking\repository\SeatRepository.java
 C:\Users\Priyanshu\Downloads\movie-ticket-booking\src\main\java\com\example\booking\service\BookingService.java
 C:\Users\Priyanshu\Downloads\movie-ticket-booking\src\main\java\com\example\booking\entity\Movie.java
 C:\Users\Priyanshu\Downloads\movie-ticket-booking\src\main\java\com\example\booking\repository\CinemaRepository.java
+C:\Users\Priyanshu\Downloads\movie-ticket-booking\src\main\java\com\example\booking\service\JwtService.java
 C:\Users\Priyanshu\Downloads\movie-ticket-booking\src\main\java\com\example\booking\BookingApplication.java
 C:\Users\Priyanshu\Downloads\movie-ticket-booking\src\main\java\com\example\booking\entity\Seat.java
 C:\Users\Priyanshu\Downloads\movie-ticket-booking\src\main\java\com\example\booking\entity\Show.java
 C:\Users\Priyanshu\Downloads\movie-ticket-booking\src\main\java\com\example\booking\repository\MovieRepository.java
+C:\Users\Priyanshu\Downloads\movie-ticket-booking\src\main\java\com\example\booking\controller\AuthController.java
 C:\Users\Priyanshu\Downloads\movie-ticket-booking\src\main\java\com\example\booking\entity\User.java
