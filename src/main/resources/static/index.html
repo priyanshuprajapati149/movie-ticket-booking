@@ -94,6 +94,7 @@
             const authSection = document.getElementById('auth-section');
             if (currentToken && currentUser) {
                 authSection.innerHTML = `
+                    <button onclick="loadMyTickets()" class="text-sm font-bold text-gray-700 hover:text-red-500 mr-4">🎫 My Tickets</button>
                     <span class="font-semibold text-gray-700 mr-2">Hi, ${currentUser}</span>
                     <button onclick="logout()" class="text-sm text-gray-500 hover:text-red-500 underline">Logout</button>
                 `;
@@ -104,7 +105,44 @@
 
         function openAuthModal() { document.getElementById('auth-modal').classList.remove('hidden'); }
         function closeAuthModal() { document.getElementById('auth-modal').classList.add('hidden'); }
-        function logout() { localStorage.removeItem('token'); localStorage.removeItem('username'); currentToken = null; currentUser = null; updateAuthUI(); }
+        function logout() { localStorage.removeItem('token'); localStorage.removeItem('username'); currentToken = null; currentUser = null; updateAuthUI(); loadMovies(); }
+
+        // --- LOAD MY TICKETS ---
+        function loadMyTickets() {
+            if (!currentToken) return openAuthModal();
+            app.innerHTML = '<div class="text-center py-10">Loading Tickets...</div>';
+            fetch('/api/bookings/mytickets', { headers: { 'Authorization': `Bearer ${currentToken}` } })
+                .then(res => res.json())
+                .then(tickets => {
+                    let html = `<div class="mb-6"><button onclick="loadMovies()" class="text-blue-500 text-sm hover:underline">← Back to Home</button></div>`;
+                    html += `<h2 class="text-3xl font-bold text-gray-800 mb-6">🎟️ My Tickets</h2>`;
+                    
+                    if (tickets.length === 0) {
+                        html += `<p class="text-gray-500">You haven't booked any tickets yet!</p>`;
+                    } else {
+                        html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-6">`;
+                        tickets.forEach(t => {
+                            const showTime = new Date(t.showTime).toLocaleString();
+                            html += `
+                                <div class="bg-white rounded-xl shadow-md border overflow-hidden flex">
+                                    <div class="bg-red-500 w-24 flex flex-col justify-center items-center text-white p-2">
+                                        <div class="text-xs font-bold uppercase tracking-widest mb-1">SEAT</div>
+                                        <div class="text-3xl font-black">${t.seatNumber}</div>
+                                    </div>
+                                    <div class="p-6 flex-1">
+                                        <h3 class="font-bold text-xl mb-1">${t.movieTitle}</h3>
+                                        <p class="text-gray-500 text-sm mb-3">${t.cinemaName} • ${t.location}</p>
+                                        <div class="text-sm font-semibold text-gray-800 bg-gray-100 p-2 rounded inline-block">🕒 ${showTime}</div>
+                                        <p class="text-xs text-gray-400 mt-4">Booking ID: #${t.bookingId}</p>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        html += `</div>`;
+                    }
+                    app.innerHTML = html;
+                });
+        }
 
         async function handleAuth(action) {
             const user = document.getElementById('username').value;
@@ -126,10 +164,46 @@
                 closeAuthModal();
                 updateAuthUI();
                 err.classList.add('hidden');
+                
+                // --- HAVERSINE GEOLOCATION PROMPT ---
+                if (navigator.geolocation) {
+                    if (confirm("Would you like to share your location to see cinemas near you?")) {
+                        navigator.geolocation.getCurrentPosition(position => {
+                            const lat = position.coords.latitude;
+                            const lon = position.coords.longitude;
+                            fetchNearbyCinemas(lat, lon);
+                        }, () => {
+                            alert("Location access denied or failed.");
+                        });
+                    }
+                }
             } else {
                 err.innerText = data.error;
                 err.classList.remove('hidden');
             }
+        }
+
+        // Fetch Nearby Cinemas using Haversine Backend
+        function fetchNearbyCinemas(lat, lon) {
+            app.innerHTML = '<div class="text-center py-10">Calculating nearest cinemas...</div>';
+            fetch(`/api/browse/cinemas/nearby?lat=${lat}&lon=${lon}`)
+                .then(res => res.json())
+                .then(cinemas => {
+                    let html = `<div class="mb-6"><button onclick="loadMovies()" class="text-blue-500 text-sm hover:underline">← Back to Movies</button></div>`;
+                    html += `<h2 class="text-3xl font-bold text-gray-800 mb-6">📍 Cinemas Near You</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
+                    cinemas.forEach(dto => {
+                        html += `
+                            <div class="bg-white p-6 rounded-lg shadow-sm border">
+                                <h3 class="font-bold text-xl mb-1">${dto.cinema.name}</h3>
+                                <p class="text-gray-500 mb-4">${dto.cinema.location}</p>
+                                <span class="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded">
+                                    ${dto.distanceKm} km away
+                                </span>
+                            </div>`;
+                    });
+                    html += '</div>';
+                    app.innerHTML = html;
+                });
         }
 
         // Load Movies

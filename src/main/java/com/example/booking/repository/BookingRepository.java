@@ -4,4 +4,5 @@ import com.example.booking.entity.Booking;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
+    java.util.List<Booking> findByUserUsername(String username);
 }

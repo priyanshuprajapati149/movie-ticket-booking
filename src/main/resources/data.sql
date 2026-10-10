@@ -7,8 +7,8 @@ INSERT INTO movies (title, language, genre) VALUES ('Inception', 'English', 'Sci
 INSERT INTO movies (title, language, genre) VALUES ('The Dark Knight', 'English', 'Action');
 
 -- Cinemas
-INSERT INTO cinemas (name, location) VALUES ('PVR Cinemas', 'Mumbai');
-INSERT INTO cinemas (name, location) VALUES ('INOX', 'Delhi');
+INSERT INTO cinemas (name, location, latitude, longitude) VALUES ('PVR Cinemas', 'Mumbai', 19.0760, 72.8777);
+INSERT INTO cinemas (name, location, latitude, longitude) VALUES ('INOX', 'Delhi', 28.7041, 77.1025);
 
 -- Shows
 -- Show 1: Inception at PVR

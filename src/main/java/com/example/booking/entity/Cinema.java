@@ -20,4 +20,10 @@ public class Cinema {
 
     @Column(nullable = false)
     private String location;
+
+    @Column(nullable = false)
+    private Double latitude;
+
+    @Column(nullable = false)
+    private Double longitude;
 }
